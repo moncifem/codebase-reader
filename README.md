@@ -1,15 +1,15 @@
 # 🔍 Codebase Reader & Analyzer
 
-An AI-powered codebase analysis tool that helps you understand, search, and analyze your code using advanced embedding models and Large Language Models (LLMs).
+An AI-powered codebase analysis tool that helps you understand, search, and analyze your code using advanced embedding models and Large Language Models (LLMs). Built following best practices from embeddings and vector database research.
 
 ## ✨ Features
 
-- **🔍 Intelligent Code Search**: Semantic search across your entire codebase
+- **🔍 Intelligent Code Search**: Semantic search across your entire codebase using cosine similarity
 - **🤖 AI-Powered Analysis**: Ask questions about your code and get intelligent responses
 - **📊 Codebase Insights**: Comprehensive statistics and language distribution
 - **🔄 Multiple Providers**: Support for different embedding and LLM providers
 - **⚡ Efficient Chunking**: Smart code chunking with language-aware processing
-- **💾 Persistent Storage**: ChromaDB for efficient vector storage
+- **💾 Persistent Storage**: ChromaDB for efficient vector storage with optimized distance metrics
 - **🌐 Beautiful UI**: Clean Streamlit interface with multiple pages
 - **🔒 Security Analysis**: Built-in security vulnerability detection
 - **📝 Documentation Generation**: AI-powered code documentation
@@ -21,8 +21,8 @@ The application consists of several modular components:
 
 - **Configuration Manager**: Centralized configuration handling
 - **Codebase Reader**: Code scanning, parsing, and chunking
-- **Embeddings Module**: Multiple embedding providers (SentenceTransformers, OpenAI)
-- **Vector Store**: ChromaDB integration for efficient similarity search
+- **Embeddings Module**: Multiple embedding providers (SentenceTransformers, OpenAI) with optimized text preprocessing
+- **Vector Store**: ChromaDB integration with cosine distance for efficient similarity search
 - **LLM Client**: Flexible LLM integration for code analysis
 - **Main Analyzer**: Orchestrates all components
 - **Streamlit UI**: User-friendly web interface
@@ -55,10 +55,17 @@ The application consists of several modular components:
 
 4. **Run the application**:
    ```bash
+   python run.py
+   # OR
    streamlit run app.py
    ```
 
-5. **Open your browser** and navigate to `http://localhost:8501`
+5. **Test the installation**:
+   ```bash
+   python test_basic.py
+   ```
+
+6. **Open your browser** and navigate to `http://localhost:8501`
 
 ## 📖 Usage Guide
 
@@ -102,6 +109,7 @@ The dashboard provides:
 - Total chunks and files indexed
 - Programming language distribution
 - Codebase size and statistics
+- Embedding provider information
 - Quick access to indexed files
 
 ### 4. Settings and Configuration
@@ -121,6 +129,7 @@ vector_db:
   type: "chromadb"
   persist_directory: "./chroma_db"
   collection_name: "codebase_chunks"
+  distance_metric: "cosine"  # Recommended by OpenAI for text embeddings
 
 # Embedding Settings
 embeddings:
@@ -128,8 +137,9 @@ embeddings:
   sentence_transformers:
     model_name: "all-MiniLM-L6-v2"
   openai:
-    model: "text-embedding-ada-002"
+    model: "text-embedding-ada-002"  # Latest and most cost-effective
     api_key_env: "OPENAI_API_KEY"
+    dimensions: 1536  # text-embedding-ada-002 outputs 1536-dimensional vectors
 
 # LLM Settings
 llm:
@@ -145,6 +155,7 @@ chunking:
   chunk_size: 1000
   chunk_overlap: 200
   max_file_size_mb: 10
+  # Optimized for semantic coherence while staying within embedding limits
 ```
 
 ## 🔧 Supported Languages
@@ -180,11 +191,14 @@ The application supports analysis of the following programming languages:
    - Model: `all-MiniLM-L6-v2`
    - No API key required
    - Runs locally
+   - Good for privacy-sensitive scenarios
 
-2. **OpenAI** (Online)
+2. **OpenAI** (Online, Recommended)
    - Model: `text-embedding-ada-002`
    - Requires OpenAI API key
+   - 1536-dimensional vectors
    - Higher quality embeddings
+   - Optimized with cosine distance metric
 
 ### LLM Providers
 
@@ -192,6 +206,25 @@ The application supports analysis of the following programming languages:
    - Model: `gpt-3.5-turbo`
    - Requires OpenAI API key
    - High-quality code analysis
+
+## 🔬 Technical Implementation
+
+### Embeddings Best Practices
+
+Based on research from embeddings and vector database experts, our implementation follows these best practices:
+
+- **Text Preprocessing**: Automatic newline removal and whitespace normalization as recommended by OpenAI
+- **Distance Metric**: Cosine similarity for measuring semantic similarity between embeddings
+- **Batch Processing**: Efficient batch processing with configurable batch sizes to respect API limits
+- **Dimension Optimization**: Proper handling of embedding dimensions (1536 for text-embedding-ada-002)
+- **Error Handling**: Graceful fallbacks for empty or problematic text chunks
+
+### Vector Database Optimization
+
+- **ChromaDB**: Open-source vector database optimized for similarity search
+- **HNSW Algorithm**: Hierarchical Navigable Small World algorithm for fast nearest neighbor search
+- **Persistent Storage**: Efficient storage with DuckDB and Parquet format
+- **Metadata Filtering**: Advanced filtering by language, file path, and other attributes
 
 ## 📁 Project Structure
 
@@ -201,14 +234,16 @@ codebase-reader/
 │   ├── __init__.py
 │   ├── config_manager.py       # Configuration management
 │   ├── codebase_reader.py      # Code scanning and chunking
-│   ├── embeddings.py           # Embedding providers
-│   ├── vector_store.py         # ChromaDB integration
+│   ├── embeddings.py           # Embedding providers with optimizations
+│   ├── vector_store.py         # ChromaDB integration with cosine distance
 │   ├── llm_client.py          # LLM providers
 │   └── codebase_analyzer.py   # Main orchestrator
 ├── app.py                     # Streamlit application
-├── config.yaml               # Configuration file
-├── requirements.txt          # Python dependencies
+├── config.yaml               # Configuration file with optimized settings
+├── requirements.txt          # Python dependencies (fixed versions)
 ├── env.example              # Environment variables template
+├── run.py                   # Easy startup script
+├── test_basic.py           # Component testing
 └── README.md               # This file
 ```
 
@@ -240,8 +275,9 @@ codebase-reader/
 
 1. Create a new provider class inheriting from `EmbeddingProvider`
 2. Implement required methods: `embed_text`, `embed_batch`, `dimension`
-3. Add provider to `EmbeddingManager._create_provider()`
-4. Update configuration if needed
+3. Add proper text preprocessing with `_preprocess_text` method
+4. Add provider to `EmbeddingManager._create_provider()`
+5. Update configuration if needed
 
 ### Adding New LLM Providers
 
@@ -249,6 +285,22 @@ codebase-reader/
 2. Implement required methods: `generate_response`, `analyze_code`
 3. Add provider to `LLMClient._create_provider()`
 4. Update configuration and UI
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Tree-sitter installation errors**: The requirements.txt has been updated with compatible versions
+2. **ChromaDB persistence issues**: Ensure the `chroma_db` directory has write permissions
+3. **OpenAI API errors**: Check your API key in the `.env` file
+4. **Memory issues with large codebases**: Adjust the `chunk_size` and `batch_size` in configuration
+
+### Performance Optimization
+
+- Use OpenAI embeddings for better semantic quality
+- Adjust `chunk_size` based on your use case (smaller for precise search, larger for context)
+- Use appropriate `batch_size` for your API rate limits
+- Consider using SentenceTransformers for offline/privacy scenarios
 
 ## 🤝 Contributing
 
@@ -268,18 +320,19 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 - **ChromaDB** for efficient vector storage
 - **SentenceTransformers** for local embeddings
-- **OpenAI** for advanced AI capabilities
+- **OpenAI** for advanced AI capabilities and embedding best practices
 - **Streamlit** for the beautiful web interface
-- **LangChain** for LLM integration patterns
+- **Research Community** for embeddings and vector database best practices
 
 ## 📞 Support
 
 If you encounter any issues or have questions:
 
-1. Check the configuration in `config.yaml`
-2. Ensure all dependencies are installed correctly
-3. Verify API keys are set up properly (if using OpenAI)
-4. Check the logs for error messages
+1. Run the test suite: `python test_basic.py`
+2. Check the configuration in `config.yaml`
+3. Ensure all dependencies are installed correctly: `pip install -r requirements.txt`
+4. Verify API keys are set up properly (if using OpenAI)
+5. Check the logs for error messages
 
 For bugs and feature requests, please open an issue on the repository.
 
