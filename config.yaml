@@ -1,0 +1,81 @@
+# Codebase Reader Configuration
+
+# Vector Database Settings
+vector_db:
+  type: "chromadb"
+  persist_directory: "./chroma_db"
+  collection_name: "codebase_chunks"
+
+# Embedding Settings
+embeddings:
+  default_provider: "sentence_transformers"  # Options: sentence_transformers, openai
+  sentence_transformers:
+    model_name: "all-MiniLM-L6-v2"
+  openai:
+    model: "text-embedding-ada-002"
+    api_key_env: "OPENAI_API_KEY"
+
+# LLM Settings
+llm:
+  default_provider: "openai"  # Options: openai, local
+  openai:
+    model: "gpt-3.5-turbo"
+    api_key_env: "OPENAI_API_KEY"
+    max_tokens: 1000
+    temperature: 0.1
+
+# Chunking Settings
+chunking:
+  chunk_size: 1000
+  chunk_overlap: 200
+  max_file_size_mb: 10
+
+# Supported File Extensions
+supported_extensions:
+  - ".py"
+  - ".js"
+  - ".ts"
+  - ".jsx"
+  - ".tsx"
+  - ".java"
+  - ".cpp"
+  - ".c"
+  - ".h"
+  - ".hpp"
+  - ".cs"
+  - ".go"
+  - ".rs"
+  - ".php"
+  - ".rb"
+  - ".swift"
+  - ".kt"
+  - ".scala"
+  - ".sql"
+  - ".html"
+  - ".css"
+  - ".md"
+  - ".txt"
+  - ".json"
+  - ".yaml"
+  - ".yml"
+
+# Files/Directories to Ignore
+ignore_patterns:
+  - "node_modules"
+  - ".git"
+  - "__pycache__"
+  - ".venv"
+  - "venv"
+  - ".env"
+  - "dist"
+  - "build"
+  - ".next"
+  - "target"
+  - "bin"
+  - "obj"
+
+# UI Settings
+ui:
+  page_title: "Codebase Reader & Analyzer"
+  page_icon: "🔍"
+  layout: "wide" 
