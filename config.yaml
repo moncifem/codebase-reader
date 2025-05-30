@@ -19,10 +19,15 @@ embeddings:
 
 # LLM Settings
 llm:
-  default_provider: "openai"  # Options: openai, local
+  default_provider: "anthropic"  # Options: openai, anthropic
   openai:
     model: "gpt-3.5-turbo"
     api_key_env: "OPENAI_API_KEY"
+    max_tokens: 1000
+    temperature: 0.1
+  anthropic:
+    model: "claude-3-haiku-20240307"  # Options: claude-3-haiku-20240307, claude-3-sonnet-20240229, claude-3-opus-20240229
+    api_key_env: "ANTHROPIC_API_KEY"
     max_tokens: 1000
     temperature: 0.1
 
@@ -64,18 +69,108 @@ supported_extensions:
 
 # Files/Directories to Ignore
 ignore_patterns:
-  - "node_modules"
+  # Version Control
   - ".git"
+  - ".svn"
+  - ".hg"
+  
+  # Node.js
+  - "node_modules"
+  - "npm-debug.log"
+  - "yarn-debug.log"
+  - "yarn-error.log"
+  - ".pnpm-debug.log"
+  
+  # Python
   - "__pycache__"
+  - ".pyc"
+  - ".pyo"
+  - ".pyd"
+  - ".Python"
+  - "pip-log.txt"
+  - "pip-delete-this-directory.txt"
   - ".venv"
   - "venv"
+  - "env"
   - ".env"
+  - "ENV"
+  - "env.bak"
+  - "venv.bak"
+  - ".pytest_cache"
+  - ".coverage"
+  - ".tox"
+  
+  # Build outputs
   - "dist"
   - "build"
-  - ".next"
+  - "out"
   - "target"
   - "bin"
   - "obj"
+  - "release"
+  - "debug"
+  
+  # IDEs and Editors
+  - ".vscode"
+  - ".idea"
+  - ".eclipse"
+  - "*.swp"
+  - "*.swo"
+  - "*~"
+  - ".DS_Store"
+  - "Thumbs.db"
+  
+  # Web frameworks
+  - ".next"
+  - ".nuxt"
+  - ".output"
+  - ".cache"
+  - ".parcel-cache"
+  - ".webpack"
+  
+  # Databases
+  - "*.db"
+  - "*.sqlite"
+  - "*.sqlite3"
+  
+  # Logs
+  - "*.log"
+  - "logs"
+  - "*.log.*"
+  
+  # Dependencies (other languages)
+  - "vendor"  # PHP, Go
+  - "Pods"    # iOS CocoaPods
+  - "packages"  # .NET
+  - ".bundle"  # Ruby
+  
+  # Temporary and system files
+  - "tmp"
+  - "temp"
+  - ".tmp"
+  - ".temp"
+  - "*.tmp"
+  - "*.temp"
+  
+  # Large media files
+  - "*.mp4"
+  - "*.avi"
+  - "*.mov"
+  - "*.mp3"
+  - "*.wav"
+  - "*.flac"
+  
+  # Compressed files
+  - "*.zip"
+  - "*.tar.gz"
+  - "*.rar"
+  - "*.7z"
+  
+  # Documentation builds
+  - "_site"
+  - ".jekyll-cache"
+  - "docs/_build"
+  - "site"  # MkDocs default
 
 # UI Settings
 ui:

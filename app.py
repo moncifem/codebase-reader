@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 from typing import Dict, Any, List
 import traceback
+import pandas as pd
 
 # Set up the environment
 from dotenv import load_dotenv
@@ -27,6 +28,10 @@ def init_session_state():
         st.session_state.current_codebase = None
     if 'indexing_in_progress' not in st.session_state:
         st.session_state.indexing_in_progress = False
+    if 'indexed_files' not in st.session_state:
+        st.session_state.indexed_files = []
+    if 'last_query' not in st.session_state:
+        st.session_state.last_query = ""
 
 
 def get_analyzer() -> CodebaseAnalyzer:
@@ -279,6 +284,7 @@ def render_indexing_page():
                         st.error(error)
                 
                 st.session_state.current_codebase = codebase_path
+                st.session_state.indexed_files = results['indexed_files']
                 
             except Exception as e:
                 st.error(f"❌ Indexing failed: {e}")

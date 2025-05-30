@@ -28,6 +28,7 @@ class EmbeddingConfig:
 class LLMConfig:
     default_provider: str
     openai: Dict[str, Any]
+    anthropic: Optional[Dict[str, Any]] = None  # Optional for backward compatibility
 
 
 @dataclass
@@ -80,8 +81,11 @@ class ConfigManager:
     @property
     def llm(self) -> LLMConfig:
         """Get LLM configuration."""
-        config = self._config['llm']
-        return LLMConfig(**config)
+        config_data = self._config['llm']
+        # Ensure backward compatibility - add default anthropic config if not present
+        if 'anthropic' not in config_data:
+            config_data['anthropic'] = None
+        return LLMConfig(**config_data)
     
     @property
     def chunking(self) -> ChunkingConfig:

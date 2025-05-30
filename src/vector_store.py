@@ -161,7 +161,7 @@ class VectorStore:
                 except Exception as e:
                     print(f"Failed to add chunk {id_}: {e}")
     
-    def search(self, query: str, n_results: int = 10, 
+    def search(self, query: str, embedding_manager, n_results: int = 10, 
               language_filter: Optional[str] = None,
               file_path_filter: Optional[str] = None) -> List[Dict[str, Any]]:
         """
@@ -170,6 +170,7 @@ class VectorStore:
         
         Args:
             query: Search query text
+            embedding_manager: Embedding manager to generate query embeddings
             n_results: Number of results to return
             language_filter: Filter by programming language
             file_path_filter: Filter by file path pattern
@@ -184,7 +185,9 @@ class VectorStore:
         clean_query = query.replace('\n', ' ')
         
         # Generate embedding for query
-        query_embedding = self.embedding_manager.embed_text(clean_query)
+        query_embedding = embedding_manager.embed_text(clean_query)
+        if not query_embedding:
+            return []
         
         # Build where clause for filtering
         where_clause = {}
