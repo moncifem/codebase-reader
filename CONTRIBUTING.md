@@ -17,7 +17,7 @@ We use GitHub to sync code, track issues and feature requests, and accept pull r
 1. **Fork the repo** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/yourusername/codebase-reader.git
+   git clone https://github.com/moncifem/codebase-reader.git
    cd codebase-reader
    ```
 

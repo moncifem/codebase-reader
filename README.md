@@ -61,7 +61,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/codebase-reader.git
+git clone https://github.com/moncifem/codebase-reader.git
 cd codebase-reader
 
 # Create virtual environment
@@ -178,13 +178,13 @@ The system automatically excludes:
 We love contributions! Here's how to get started:
 
 ### 🐛 Bug Reports
-Found a bug? [Open an issue](https://github.com/yourusername/codebase-reader/issues) with:
+Found a bug? [Open an issue](https://github.com/moncifem/codebase-reader/issues) with:
 - Steps to reproduce
 - Expected vs actual behavior
 - Environment details (OS, Python version)
 
 ### ✨ Feature Requests
-Have an idea? [Open an issue](https://github.com/yourusername/codebase-reader/issues) with:
+Have an idea? [Open an issue](https://github.com/moncifem/codebase-reader/issues) with:
 - Use case description
 - Proposed solution
 - Example usage
@@ -192,7 +192,7 @@ Have an idea? [Open an issue](https://github.com/yourusername/codebase-reader/is
 ### 🔧 Development Setup
 ```bash
 # Fork the repo and clone your fork
-git clone https://github.com/yourusername/codebase-reader.git
+git clone https://github.com/moncifem/codebase-reader.git
 
 # Create a feature branch
 git checkout -b feature/amazing-feature
@@ -220,7 +220,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/codebase-reader&type=Date)](https://star-history.com/#yourusername/codebase-reader&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=moncifem/codebase-reader&type=Date)](https://www.star-history.com/#moncifem/codebase-reader&Date)
 
 ---
 
