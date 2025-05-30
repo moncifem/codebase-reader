@@ -14,6 +14,7 @@ class VectorDBConfig:
     type: str
     persist_directory: str
     collection_name: str
+    distance_metric: str = "cosine"  # Default to cosine distance
 
 
 @dataclass
@@ -64,8 +65,11 @@ class ConfigManager:
     @property
     def vector_db(self) -> VectorDBConfig:
         """Get vector database configuration."""
-        config = self._config['vector_db']
-        return VectorDBConfig(**config)
+        config_data = self._config['vector_db']
+        # Ensure backward compatibility - add default distance_metric if not present
+        if 'distance_metric' not in config_data:
+            config_data['distance_metric'] = 'cosine'
+        return VectorDBConfig(**config_data)
     
     @property
     def embeddings(self) -> EmbeddingConfig:
