@@ -239,6 +239,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ by the open source community**
 
-[⭐ Star this repo](https://github.com/yourusername/codebase-reader) • [🐛 Report Bug](https://github.com/yourusername/codebase-reader/issues) • [✨ Request Feature](https://github.com/yourusername/codebase-reader/issues)
+[⭐ Star this repo](https://github.com/moncifem/codebase-reader) • [🐛 Report Bug](https://github.com/moncifem/codebase-reader/issues) • [✨ Request Feature](https://github.com/moncifem/codebase-reader/issues)
 
 </div> 
