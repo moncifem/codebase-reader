@@ -1,10 +1,11 @@
 """
 Embeddings module for generating vector representations of code chunks.
 Supports multiple embedding providers: sentence transformers and OpenAI.
+Based on best practices from embeddings and vector database research.
 """
 
 import os
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 from abc import ABC, abstractmethod
 import numpy as np
 
@@ -63,12 +64,27 @@ class SentenceTransformerProvider(EmbeddingProvider):
             _ = self.model
         return self._dimension
     
+    def _preprocess_text(self, text: str) -> str:
+        """Preprocess text for embedding as recommended by research."""
+        if not text.strip():
+            return ""
+        
+        # Replace newlines with spaces as recommended
+        processed = text.replace('\n', ' ')
+        
+        # Remove excessive whitespace
+        processed = ' '.join(processed.split())
+        
+        return processed
+    
     def embed_text(self, text: str) -> List[float]:
         """Generate embedding for a single text."""
-        if not text.strip():
+        processed_text = self._preprocess_text(text)
+        
+        if not processed_text:
             return [0.0] * self.dimension
         
-        embedding = self.model.encode([text])[0]
+        embedding = self.model.encode([processed_text])[0]
         return embedding.tolist()
     
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
@@ -76,11 +92,14 @@ class SentenceTransformerProvider(EmbeddingProvider):
         if not texts:
             return []
         
+        # Preprocess all texts
+        processed_texts = [self._preprocess_text(text) for text in texts]
+        
         # Filter out empty texts and keep track of indices
         non_empty_texts = []
         indices_map = []
         
-        for i, text in enumerate(texts):
+        for i, text in enumerate(processed_texts):
             if text.strip():
                 non_empty_texts.append(text)
                 indices_map.append(i)
@@ -95,7 +114,7 @@ class SentenceTransformerProvider(EmbeddingProvider):
         result = []
         non_empty_idx = 0
         
-        for i, text in enumerate(texts):
+        for i, text in enumerate(processed_texts):
             if text.strip() and non_empty_idx < len(embeddings):
                 result.append(embeddings[non_empty_idx].tolist())
                 non_empty_idx += 1
@@ -112,11 +131,13 @@ class OpenAIProvider(EmbeddingProvider):
         self.model = model or config.embeddings.openai['model']
         self.api_key = api_key or config.get_api_key(config.embeddings.openai['api_key_env'])
         
+        # Get dimensions from config if available, otherwise use known values
+        self._dimension = getattr(config.embeddings.openai, 'dimensions', None)
+        
         if not self.api_key:
             raise ValueError("OpenAI API key is required but not provided")
         
         self._client = None
-        self._dimension = None
     
     @property
     def client(self):
@@ -133,24 +154,41 @@ class OpenAIProvider(EmbeddingProvider):
     def dimension(self) -> int:
         """Get the dimension of the embeddings."""
         if self._dimension is None:
-            # OpenAI ada-002 has 1536 dimensions
+            # Known dimensions for OpenAI models
             if "ada-002" in self.model:
                 self._dimension = 1536
+            elif "ada-001" in self.model:
+                self._dimension = 1024
             else:
                 # Fallback: make a test request to get dimension
                 test_embedding = self.embed_text("test")
                 self._dimension = len(test_embedding)
         return self._dimension
     
+    def _preprocess_text(self, text: str) -> str:
+        """Preprocess text for OpenAI embedding as recommended by their docs."""
+        if not text.strip():
+            return ""
+        
+        # Replace newlines with spaces as specifically recommended by OpenAI
+        processed = text.replace('\n', ' ')
+        
+        # Remove excessive whitespace
+        processed = ' '.join(processed.split())
+        
+        return processed
+    
     def embed_text(self, text: str) -> List[float]:
         """Generate embedding for a single text."""
-        if not text.strip():
+        processed_text = self._preprocess_text(text)
+        
+        if not processed_text:
             return [0.0] * self.dimension
         
         try:
             response = self.client.embeddings.create(
                 model=self.model,
-                input=text
+                input=processed_text
             )
             return response.data[0].embedding
         except Exception as e:
@@ -162,8 +200,11 @@ class OpenAIProvider(EmbeddingProvider):
         if not texts:
             return []
         
+        # Preprocess all texts
+        processed_texts = [self._preprocess_text(text) for text in texts]
+        
         # Filter out empty texts
-        non_empty_texts = [text for text in texts if text.strip()]
+        non_empty_texts = [text for text in processed_texts if text.strip()]
         
         if not non_empty_texts:
             return [[0.0] * self.dimension] * len(texts)
@@ -179,7 +220,7 @@ class OpenAIProvider(EmbeddingProvider):
             result = []
             embedding_idx = 0
             
-            for text in texts:
+            for text in processed_texts:
                 if text.strip() and embedding_idx < len(embeddings):
                     result.append(embeddings[embedding_idx])
                     embedding_idx += 1
@@ -229,11 +270,17 @@ class EmbeddingManager:
         return self.provider.embed_text(text)
     
     def embed_batch(self, texts: List[str], batch_size: int = 100) -> List[List[float]]:
-        """Generate embeddings for a batch of texts with optional batching."""
+        """
+        Generate embeddings for a batch of texts with optional batching.
+        
+        Args:
+            texts: List of texts to embed
+            batch_size: Maximum batch size for API calls (especially important for OpenAI)
+        """
         if len(texts) <= batch_size:
             return self.provider.embed_batch(texts)
         
-        # Process in smaller batches
+        # Process in smaller batches to avoid API limits
         all_embeddings = []
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
@@ -266,4 +313,13 @@ class EmbeddingManager:
             except ImportError:
                 pass
         
-        return available 
+        return available
+    
+    def get_provider_info(self) -> Dict[str, Any]:
+        """Get information about the current provider."""
+        return {
+            'provider_type': self.provider_type,
+            'model_name': getattr(self.provider, 'model_name', None) or getattr(self.provider, 'model', None),
+            'dimension': self.dimension,
+            'description': f"{self.provider_type} embedding provider"
+        } 

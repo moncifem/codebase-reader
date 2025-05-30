@@ -5,6 +5,7 @@ vector_db:
   type: "chromadb"
   persist_directory: "./chroma_db"
   collection_name: "codebase_chunks"
+  distance_metric: "cosine"  # Recommended by OpenAI for their embeddings
 
 # Embedding Settings
 embeddings:
@@ -12,8 +13,9 @@ embeddings:
   sentence_transformers:
     model_name: "all-MiniLM-L6-v2"
   openai:
-    model: "text-embedding-ada-002"
+    model: "text-embedding-ada-002"  # Latest and most cost-effective OpenAI model
     api_key_env: "OPENAI_API_KEY"
+    dimensions: 1536  # text-embedding-ada-002 outputs 1536-dimensional vectors
 
 # LLM Settings
 llm:
@@ -29,6 +31,7 @@ chunking:
   chunk_size: 1000
   chunk_overlap: 200
   max_file_size_mb: 10
+  # Optimized for semantic coherence while staying within embedding limits
 
 # Supported File Extensions
 supported_extensions:

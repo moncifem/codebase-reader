@@ -1,6 +1,7 @@
 """
 Vector store module for managing ChromaDB operations.
 Handles storage and retrieval of code chunks with their embeddings.
+Based on best practices from embeddings and vector database research.
 """
 
 import os
@@ -20,6 +21,7 @@ class VectorStore:
     def __init__(self, collection_name: Optional[str] = None, persist_directory: Optional[str] = None):
         self.collection_name = collection_name or config.vector_db.collection_name
         self.persist_directory = persist_directory or config.vector_db.persist_directory
+        self.distance_metric = getattr(config.vector_db, 'distance_metric', 'cosine')
         
         self._client = None
         self._collection = None
@@ -52,10 +54,16 @@ class VectorStore:
                 # Try to get existing collection
                 self._collection = self.client.get_collection(name=self.collection_name)
             except Exception:
-                # Create new collection if it doesn't exist
+                # Create new collection with optimized settings
+                # Using cosine distance as recommended for text embeddings
+                collection_metadata = {
+                    "hnsw:space": self.distance_metric,
+                    "description": "Codebase chunks with semantic embeddings"
+                }
+                
                 self._collection = self.client.create_collection(
                     name=self.collection_name,
-                    metadata={"hnsw:space": "cosine"}
+                    metadata=collection_metadata
                 )
         return self._collection
     
@@ -85,13 +93,19 @@ class VectorStore:
         metadatas = []
         embeddings = []
         
+        # Prepare text for embedding (clean up as recommended in research)
+        chunk_texts = []
+        for chunk in chunks:
+            # Replace newlines with spaces as recommended by OpenAI
+            clean_text = chunk.content.replace('\n', ' ')
+            chunk_texts.append(clean_text)
+        
         # Generate embeddings for all chunks in batch
-        chunk_texts = [chunk.content for chunk in chunks]
         chunk_embeddings = self.embedding_manager.embed_batch(chunk_texts)
         
         for chunk, embedding in zip(chunks, chunk_embeddings):
             ids.append(chunk.id)
-            documents.append(chunk.content)
+            documents.append(chunk.content)  # Keep original for display
             
             # Prepare metadata (ChromaDB doesn't support nested dicts well)
             metadata = {
@@ -103,7 +117,8 @@ class VectorStore:
                 'chunk_index': chunk.chunk_index,
                 'file_size': chunk.metadata.get('file_size', 0),
                 'total_lines': chunk.metadata.get('total_lines', 0),
-                'chunk_size': chunk.metadata.get('chunk_size', 0)
+                'chunk_size': chunk.metadata.get('chunk_size', 0),
+                'embedding_model': self.embedding_manager.provider_type
             }
             metadatas.append(metadata)
             embeddings.append(embedding)
@@ -150,7 +165,8 @@ class VectorStore:
               language_filter: Optional[str] = None,
               file_path_filter: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Search for similar code chunks.
+        Search for similar code chunks using semantic similarity.
+        Uses cosine distance as recommended for text embeddings.
         
         Args:
             query: Search query text
@@ -164,8 +180,11 @@ class VectorStore:
         if not query.strip():
             return []
         
+        # Clean query text as recommended
+        clean_query = query.replace('\n', ' ')
+        
         # Generate embedding for query
-        query_embedding = self.embedding_manager.embed_text(query)
+        query_embedding = self.embedding_manager.embed_text(clean_query)
         
         # Build where clause for filtering
         where_clause = {}
@@ -182,16 +201,20 @@ class VectorStore:
                 include=['documents', 'metadatas', 'distances']
             )
             
-            # Format results
+            # Format results with proper similarity scores
             formatted_results = []
             if results['ids'] and results['ids'][0]:
                 for i in range(len(results['ids'][0])):
+                    distance = results['distances'][0][i]
+                    # Convert cosine distance to similarity score (closer to 1 = more similar)
+                    similarity = 1 - distance
+                    
                     result = {
                         'id': results['ids'][0][i],
                         'content': results['documents'][0][i],
                         'metadata': results['metadatas'][0][i],
-                        'distance': results['distances'][0][i],
-                        'similarity': 1 - results['distances'][0][i]  # Convert distance to similarity
+                        'distance': distance,
+                        'similarity': similarity
                     }
                     formatted_results.append(result)
             
@@ -312,20 +335,25 @@ class VectorStore:
                     'total_chunks': 0,
                     'unique_files': 0,
                     'languages': {},
-                    'total_size_bytes': 0
+                    'total_size_bytes': 0,
+                    'embedding_providers': {}
                 }
             
             stats = {
                 'total_chunks': len(results['metadatas']),
                 'unique_files': len(set(m['file_path'] for m in results['metadatas'])),
                 'languages': {},
-                'total_size_bytes': sum(m.get('chunk_size', 0) for m in results['metadatas'])
+                'total_size_bytes': sum(m.get('chunk_size', 0) for m in results['metadatas']),
+                'embedding_providers': {}
             }
             
-            # Count languages
+            # Count languages and embedding providers
             for metadata in results['metadatas']:
                 lang = metadata.get('language', 'unknown')
                 stats['languages'][lang] = stats['languages'].get(lang, 0) + 1
+                
+                provider = metadata.get('embedding_model', 'unknown')
+                stats['embedding_providers'][provider] = stats['embedding_providers'].get(provider, 0) + 1
             
             return stats
             
@@ -335,7 +363,8 @@ class VectorStore:
                 'total_chunks': 0,
                 'unique_files': 0,
                 'languages': {},
-                'total_size_bytes': 0
+                'total_size_bytes': 0,
+                'embedding_providers': {}
             }
     
     def clear_collection(self) -> None:
@@ -372,7 +401,8 @@ class VectorStore:
                         'language': metadata.get('language', 'unknown'),
                         'file_hash': metadata.get('file_hash', ''),
                         'chunk_count': 0,
-                        'total_size': 0
+                        'total_size': 0,
+                        'embedding_model': metadata.get('embedding_model', 'unknown')
                     }
                 
                 files_info[file_path]['chunk_count'] += 1
